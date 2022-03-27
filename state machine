@@ -1,0 +1,91 @@
+#State 1: Wait for a hard tap. When tapped, a random LED will turn white. Then, the second LED will turn Red and darken the previous LED. If LED#2 turns red, change to second state
+#State 2: Make LED#0 Blink 3 times in blue. Move to State 3.
+#State 3: If user touch pad A4, move on to State 4.
+#State 4: Light up Neopixels 2,4,6 Green, Yellow and blue respectively
+#State 5: Wait for user to touch A6 to start over.
+
+import time
+from adafruit_circuitplayground import cp
+import random
+import board
+import touchio
+import digitalio
+
+touch_A4 = touchio.TouchIn(board.A4)
+touch_A5 = touchio.TouchIn(board.A5)
+touch_A6 = touchio.TouchIn(board.A6)
+# this sets the number of taps we are looking for by sending a number to *detect taps* in the cp library.
+# Change to 1 for single-tap detection.
+# Change to 2 for double-tap detection.
+cp.detect_taps = 1
+# We use the function "randint" in the library "random" to get a random number between 0 and 9.
+x = random.randint(0,9)
+
+
+#Creating a variable to keep track of the current "state" of our object
+state = 'begin'
+print('begin')
+while True:
+    cp.pixels.fill(0)
+    while state == 'begin':
+    #Tapping a neopixel chooses a neopixel to light up until it lights up pixel#2
+        if cp.tapped:
+            # print(random.randint( 0, 9))
+            # Here we darken neopixel x by sending it the color black.
+            cp.pixels[x] = ( 0, 0, 0)
+            print(x)
+            # We need to remember this number so we can darken it later so we save it in "oldx".
+            oldx = x
+            # We use a while loop to choose a random number.
+            # The while loop keeps getting random numbers if oldx and x are the same.
+            # The code would work ok if we only got the number once. Why do we put it in a loop?
+            while oldx == x:
+                x = random.randint(0,9)
+            # When x and oldx are not equal, we light up that Neopixel.
+            cp.pixels[x] = ( 90, 100, 80)
+            cp.pixels.show()
+            if x == 1:
+                state = 'second'
+                print('second')
+
+            
+    while state == 'second':
+    #Make LED#0 blink 3 times in blue.
+        cp.pixels[4] = (10, 6, 220)
+        time.sleep(0.5)
+        cp.pixels[4] = (10, 6, 0)
+        time.sleep(0.5)
+        cp.pixels[4] = (10, 6, 220)
+        time.sleep(0.5)
+        cp.pixels[4] = (10, 6, 0)
+        time.sleep(0.5)
+        state = 'third'
+        print('third')
+
+    while state == 'third':
+        #wait for user to touch A4
+        if touch_A4.value:
+            print('touched A4')
+            state = 'fourth'
+
+    while state == 'fourth':
+        #State 4: Light up Neopixels 2,4,6 Green, Yellow and blue respectively
+        cp.pixels.brightness = 0.3
+        #Neopixel 2 lights up green
+        cp.pixels[1] = (0, 128, 0)
+        #Neopixel 4 lights up yellow
+        cp.pixels[3] = (255, 255, 0)
+        #Neopixel 6 lights up blue
+        cp.pixels[5] = (0, 0, 255)
+        time.sleep(1)
+        state = 'fifth'
+        print('fifth')
+
+        
+    while state == "fifth":
+            # In which we wait for the user to touch the A6 pad.
+            if touch_A6.value:
+                print('touched')
+                print('begin')
+                state = 'begin'
+    time.sleep(0.05)
